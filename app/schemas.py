@@ -1,34 +1,35 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
+from marshmallow import Schema, fields, post_load, validate
 
-class BookCreate(BaseModel):
-    title: str = Field(..., max_length=255)
-    author: str = Field(..., max_length=255)
-    genre: str = Field(..., max_length=100)
-    year_published: int
-    summary: Optional[str] = None
+from app.models import Book, Review, User
 
-class Book(BookCreate):
-    id: int
+class BookSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    title = fields.String(required=True)
+    author = fields.String(required=True)
+    genre = fields.String(required=True)
+    year_published = fields.Integer()
+    summary = fields.String()
 
-    class Config:
-        orm_mode = True
+    @post_load
+    def make_book(self, data, **kwargs):
+        return Book(**data)
 
-class ReviewCreate(BaseModel):
-    user_id: int
-    review_text: str
-    rating: float = Field(..., ge=1, le=5)
+class ReviewSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    book_id = fields.Integer(required=True)
+    user_id = fields.Integer(dump_only=True)  # Don't allow user_id to be passed in
+    review_text = fields.String()
+    rating = fields.Integer(required=True, validate=validate.Range(min=1, max=5))
 
-class Review(ReviewCreate):
-    id: int
-    book_id: int
+    @post_load
+    def make_review(self, data, **kwargs):
+        return Review(**data)
 
-    class Config:
-        orm_mode = True
+class UserSchema(Schema):
+    id = fields.Integer(dump_only=True)
+    username = fields.String(required=True)
+    password = fields.String(required=True, load_only=True)  # Only for input, not output
 
-class BookWithReviews(Book):
-    reviews: List[Review] = []
-
-class SummaryResponse(BaseModel):
-    summary: str
-    average_rating: Optional[float]
+    @post_load
+    def make_user(self, data, **kwargs):
+        return User(**data)

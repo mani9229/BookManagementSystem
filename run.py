@@ -1,13 +1,14 @@
-from app import create_app, db
-from app.models import Book, Review  # Import your models
-from dotenv import load_dotenv
+import os
+from app import create_app
+from app import db  
+from app.config import get_config
 
-app = create_app()
-load_dotenv() # Load environment variables
+#  Determine the environment
+config_name = os.getenv('FLASK_ENV') or 'default'
+app = create_app(get_config(config_name))
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+if __name__ == '__main__':
+    #  Run the app
+    app.run(debug=app.config['DEBUG'])
 
-if __name__ == "__main__":
-    app.run(debug=True)
+

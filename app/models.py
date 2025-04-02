@@ -1,26 +1,40 @@
-from app.database import db
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
-from sqlalchemy.orm import relationship
+from app import db
+from werkzeug.security import generate_password_hash, check_password_hash
 
 class Book(db.Model):
-    __tablename__ = 'books'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    author = db.Column(db.String(255), nullable=False)
+    genre = db.Column(db.String(255), nullable=False)
+    year_published = db.Column(db.Integer)
+    summary = db.Column(db.Text)
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    author = Column(String, nullable=False)
-    genre = Column(String, nullable=False)
-    year_published = Column(Integer, nullable=False)
-    summary = Column(db.Text, nullable=True)  # Can be nullable
-
-    reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
+    def __repr__(self):
+        return f'<Book {self.title}>'
 
 class Review(db.Model):
-    __tablename__ = 'reviews'
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    review_text = db.Column(db.Text)
+    rating = db.Column(db.Integer, nullable=False)
 
-    id = Column(Integer, primary_key=True)
-    book_id = Column(Integer, ForeignKey('books.id'), nullable=False)
-    user_id = Column(Integer, nullable=False)  # Simple user ID for now
-    review_text = Column(db.Text, nullable=False)
-    rating = Column(Float, nullable=False)
+    book = db.relationship('Book', backref='reviews')
+    user = db.relationship('User', backref='reviews')
 
-    book = relationship("Book", back_populates="reviews")
+    def __repr__(self):
+        return f'<Review {self.review_text[:20]}...>'
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
