@@ -17,7 +17,7 @@ class BookSchema(Schema):
 class ReviewSchema(Schema):
     id = fields.Integer(dump_only=True)
     book_id = fields.Integer(required=True)
-    user_id = fields.Integer(dump_only=True)  # Don't allow user_id to be passed in
+    user_id = fields.Integer(dump_only=True) 
     review_text = fields.String()
     rating = fields.Integer(required=True, validate=validate.Range(min=1, max=5))
 
@@ -28,7 +28,7 @@ class ReviewSchema(Schema):
 class UserSchema(Schema):
     id = fields.Integer(dump_only=True)
     username = fields.String(required=True)
-    password = fields.String(required=True, load_only=True)  # Only for input, not output
+    password = fields.String(required=True, load_only=True)  
 
     @post_load
     def make_user(self, data, **kwargs):
