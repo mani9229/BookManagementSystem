@@ -420,10 +420,7 @@ def get_book_summary(book_id):
     }
 })
 def get_recommendations():
-    # Placeholder for recommendation logic
-    # In a real application, you would implement a recommendation algorithm here
-    # based on user history, preferences, or collaborative filtering.
-    # For now, let's return all books as a simple example.
+    # to generate the recommendation we need to implement a recommendation engine or historical data so For now, i am returning all books as a simple example.
     books = book_repository.get_all_books()
     book_schema = BookSchema(many=True)
     return jsonify(book_schema.dump(books))
