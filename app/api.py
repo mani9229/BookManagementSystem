@@ -111,7 +111,7 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, os.environ.get('SECRET_KEY'), algorithms=["HS256"])
-            # You might want to fetch the user from the database here based on data['user_id']
+            # user_id
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token has expired!'}), 401
         except jwt.InvalidTokenError:
