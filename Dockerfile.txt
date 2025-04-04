@@ -1,4 +1,4 @@
-#  Use an official Python runtime as a parent image
+
 FROM python:3.9-slim-buster
 
 #  Set the working directory in the container to /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 #  Install system dependencies (if any -  e.g., for psycopg2)
-#  This is often needed for database drivers or other system-level libraries
+
 RUN apt-get update && \
     apt-get -y install --no-install-recommends \
     postgresql-client \
@@ -23,15 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 8000
 
 #  Set environment variables (if needed)
-#  These are example - you should set the actual values
-#  either here (for testing - NOT recommended for production)
-#  or, preferably, when running the container (using the -e flag)
+
 ENV FLASK_ENV=production
 ENV DATABASE_URL=postgresql://user:password@db:5432/book_management
 ENV SECRET_KEY=your_super_secret_key
 
 #  Run the application!
-
-
-#  Example of using flask run for development
-#  CMD ["flask", "run", "--host=0.0.0.0", "--port=8000"]
