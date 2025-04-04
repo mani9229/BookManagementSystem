@@ -1,3 +1,4 @@
+#Default file names basically fits for all the cases and i am using the same template
 #  .gitignore for a Python/Flask project with Ollama
 
 #  OS generated files
@@ -13,26 +14,7 @@ venv/
 .venv/
 .envrc
 
-#  Python bytecode and temp files
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.so
-*.egg-info
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.nox/
-.mypy_cache/
-.pyre_configuration
-.pytype/
-
-#  Flask instance folder (if you use it)
-/instance
-
-#  Environment variables - VERY IMPORTANT
+#  Environment variables 
 .env
 
 #  Logs and databases
@@ -46,37 +28,10 @@ htmlcov/
 /sdist
 *.egg
 
-#  Editor-specific files
-.idea/
-.project
-.workspace
-*.swp
-*.swo
-*.vscode/
-
-#  Conda environment (if you use it)
-/envs
-
-
 # /ollama/models/
-
-#  Temporary files
-/tmp/
-temp/
-tmp/
-
-#  Static files (if you generate them)
-/static/
 
 #  Logs
 *.log
 
-#  Ignore media folder
-/media/
-/uploads/
 
-#  Distributions
-dist/
 
-#  System files
-.Trashes
