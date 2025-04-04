@@ -8,13 +8,13 @@ from typing import List, Optional
 load_dotenv()
 
 # --- Configuration ---
-LLM_PROVIDER = "OLLAMA"  # Only OLLAMA is supported in this version based on the requirement document
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "Llama-2-7b-chat-GGUF")  # Default model
+LLM_PROVIDER = "OLLAMA"  
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "Llama-2-7b-chat-GGUF")  # model
 
 # --- Ollama Setup ---
 def get_ollama_model():
     """Initializes and returns the Ollama model."""
-    return Ollama(model=OLLAMA_MODEL)  # Replace with your Ollama model
+    return Ollama(model=OLLAMA_MODEL)  # model
 
 # --- LLM Utility Functions ---
 
@@ -65,7 +65,7 @@ def generate_review_summary(reviews: List[str]) -> Optional[str]:
 
 
 def generate_recommendations(user_preferences: str, books_data: List[dict]) -> str:
-    """Generates book recommendations based on user preferences using Ollama."""
+    """Generates book recommendations based on user preferences."""
 
     try:
         if LLM_PROVIDER == "OLLAMA":
