@@ -71,7 +71,7 @@ Ollama is essential for generating book summaries and recommendations. Proper se
 PostgreSQL is used to store book and review data.
 
 1.  **Install PostgreSQL:**
-     ** for this i have used the free version of neondb postgeSQL
+     * For this i have used the free version of neondb postgeSQL
     
 2.  **Create the Database and User:**
 
@@ -87,7 +87,7 @@ PostgreSQL is used to store book and review data.
         CREATE DATABASE your_db_name;  #  Create the database
         CREATE USER your_db_user WITH PASSWORD 'your_db_password';  #  Create a user
         GRANT ALL PRIVILEGES ON DATABASE your_db_name TO your_db_user;  #  Grant privileges
-        \q  #  Exit the PostgreSQL prompt
+        \q  
         ```
 
  
@@ -98,8 +98,8 @@ PostgreSQL is used to store book and review data.
 1.  **Clone the Repository:**
 
     ```bash
-    git clone <repository_url>  #  Replace <repository_url> with the actual URL
-    cd <repository_name>  #  Navigate to the cloned directory
+    git clone <repository_url>  
+    cd <repository_name>  
     ```
 
 
@@ -119,10 +119,10 @@ Environment variables are used to configure the application without hardcoding s
     * Open the `.env` file in a text editor and replace the placeholder values with your actual configuration.
 
     ```
-    SECRET_KEY=your_strong_secret_key  #  Flask's secret key 
+    SECRET_KEY=your_strong_secret_key  
     DATABASE_URL=postgresql://your_db_user:your_db_password@your_host:your_port/your_db_name  #  PostgreSQL connection string
     FLASK_ENV=development 
-    OLLAMA_MODEL=Llama-2-7b-chat-GGUF  #  Ollama model name (must match downloaded model)
+    OLLAMA_MODEL=Llama-2-7b-chat-GGUF  #  Ollama model name 
     ```
 
 ###   2.3. Database Migration 
@@ -357,7 +357,7 @@ This section details all the available API endpoints.
             {
                 "id": 3,
                 "book_id": 1,
-                "user_id": 1, // User ID will be taken from the JWT
+                "user_id": 1, 
                 "review_text": "My review...",
                 "rating": 4
             }
