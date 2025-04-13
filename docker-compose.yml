@@ -1,0 +1,25 @@
+version: "3.8"
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # If you need to mount your model or other data
+      # - ./path/on/host:/path/in/container
+    environment:
+      DATABASE_URL: postgresql+asyncpg://user:password@db/dbname # Adjust if needed
+      LLAMA_MODEL_PATH: /app/models/model.gguf # Adjust if you mount
+      SECRET_KEY: your_secret_key
+    depends_on:
+      - db
+  db:
+    image: postgres:14-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dbname
+volumes:
+  postgres_data:
