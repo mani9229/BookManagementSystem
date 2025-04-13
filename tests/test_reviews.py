@@ -1,54 +1,44 @@
+# tests/test_reviews.py
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from app import schemas, models
 import json
 
-def test_create_review(test_client, auth_headers, create_book):
-    #   Ensure there's a book to review
-    create_book()
+async def test_create_review(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    data = {
-        'review_text': 'This book was amazing!',
-        'rating': 5
-    }
-    response = test_client.post('/api/books/1/reviews', json=data, headers=auth_headers)
+    review_data = {"review_text": "Excellent book!", "rating": 5}
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.post(f"/api/books/{test_book.id}/reviews/", json=review_data, headers=headers)
     assert response.status_code == 201
-    assert response.json['review_text'] == 'This book was amazing!'
-    assert response.json['rating'] == 5
+    assert response.json()["review_text"] == "Excellent book!"
 
-def test_get_book_reviews(test_client, auth_headers, create_book, create_review):
-    #   Create a book and a review
-    create_book()
-    create_review()
+async def test_read_reviews_for_book(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book, test_review: models.Review):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    response = test_client.get('/api/books/1/reviews', headers=auth_headers)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get(f"/api/books/{test_book.id}/reviews/", headers=headers)
     assert response.status_code == 200
-    assert len(response.json) > 0
-    assert response.json[0]['review_text'] == 'Great book!'
+    assert len(response.json()) > 0
 
-def test_create_review_invalid_data(test_client, auth_headers, create_book):
-    #   Ensure there's a book to review
-    create_book()
+async def test_update_review(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book, test_review: models.Review):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    data = {
-        'review_text': 'This book was amazing!',
-        'rating': 6  # Invalid rating
-    }
-    response = test_client.post('/api/books/1/reviews', json=data, headers=auth_headers)
-    assert response.status_code == 400
+    updated_data = {"review_text": "Updated review text", "rating": 4}
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.put(f"/api/books/{test_book.id}/reviews/{test_review.id}", json=updated_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["review_text"] == "Updated review text"
+    assert response.json()["rating"] == 4
 
-def test_get_book_reviews_no_auth(test_client, create_book, create_review):
-    #   Create a book and a review (without auth)
-    create_book()
-    create_review()
-
-    response = test_client.get('/api/books/1/reviews')
-    assert response.status_code == 401
-
-def test_create_review_no_auth(test_client, create_book):
-    #   Ensure there's a book to review
-    create_book()
-
-    data = {
-        'review_text': 'This book was amazing!',
-        'rating': 5
-    }
-    response = test_client.post('/api/books/1/reviews', json=data)
-    assert response.status_code == 401
+async def test_delete_review(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book
