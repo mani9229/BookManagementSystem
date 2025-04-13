@@ -8,3 +8,21 @@ marshmallow
 pytest
 langchain
 ollama
+#   FastAPI and related
+fastapi
+uvicorn[standard]
+asyncpg
+SQLAlchemy[asyncio]
+pydantic
+python-dotenv
+jose
+passlib
+httpx
+
+#   LLM interaction
+llama-cpp
+
+#   General
+python-dotenv
+pytest
+prometheus_client
