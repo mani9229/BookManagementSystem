@@ -1,31 +1,26 @@
+#   Use an official Python runtime as a parent image
+FROM python:3.11-slim-buster
 
-FROM python:3.9-slim-buster
-
-#  Set the working directory in the container to /app
+#   Set the working directory in the container
 WORKDIR /app
 
-#  Copy the current directory contents into the container at /app
+#   Copy the current directory contents into the container at /app
 COPY . /app
 
-#  Install system dependencies (if any -  e.g., for psycopg2)
+#   Install system dependencies (if needed - e.g., for llama.cpp)
+#   RUN apt-get update && apt-get -y install ...
 
-RUN apt-get update && \
-    apt-get -y install --no-install-recommends \
-    postgresql-client \
-    build-essential libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-#  Install any needed packages specified in requirements.txt
+#   Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-#  Make port 8000 available to the world outside this container
-#  (Adjust if your app listens on a different port)
+#   Expose the port the app runs on
 EXPOSE 8000
 
-#  Set environment variables (if needed)
+#   Set environment variables (example - you might want to pass these in at runtime for production)
+#   ENV DATABASE_URL=...
+#   ENV LLAMA_MODEL_PATH=...
+#   ENV SECRET_KEY=...
 
-ENV FLASK_ENV=production
-ENV DATABASE_URL=postgresql://user:password@db:5432/book_management
-ENV SECRET_KEY=your_super_secret_key
-
-#  Run the application!
+#   Run the application using Uvicorn (for FastAPI) or Gunicorn (for Flask)
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"] # For FastAPI
+#   CMD ["gunicorn", "main:app", "--workers", "4", "--bind", "0.0.0.0:8000"] # For Flask
