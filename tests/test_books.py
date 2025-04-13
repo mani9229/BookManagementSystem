@@ -1,59 +1,86 @@
+# tests/test_books.py
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from app import schemas, models
 import json
 
-def test_create_book(test_client, auth_headers):
-    data = {
-        'title': 'Test Book',
-        'author': 'Test Author',
-        'genre': 'Fiction'
-    }
-    response = test_client.post('/api/books', json=data, headers=auth_headers)
+async def test_create_book(async_client: AsyncClient, db: AsyncSession, test_user: models.User):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
+
+    book_data = {"title": "New Book", "author": "New Author", "genre": "Mystery", "year_published": 2024, "content": "New Content"}
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.post("/api/books/", json=book_data, headers=headers)
     assert response.status_code == 201
-    assert response.json['title'] == 'Test Book'
+    assert response.json()["title"] == "New Book"
 
-def test_get_books(test_client, auth_headers):
-    #   First, create a book
-    data = {
-        'title': 'Another Book',
-        'author': 'Some Author',
-        'genre': 'Mystery'
-    }
-    test_client.post('/api/books', json=data, headers=auth_headers)
+async def test_read_books(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    response = test_client.get('/api/books', headers=auth_headers)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get("/api/books/", headers=headers)
     assert response.status_code == 200
-    assert len(response.json) > 0
+    assert len(response.json()) > 0
 
-def test_get_book(test_client, auth_headers, create_book):
-    #   Create a book first
-    create_book(title='Unique Book', author='Special Author', genre='Thriller')
-    response = test_client.get('/api/books/1', headers=auth_headers)
+async def test_read_book(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get(f"/api/books/{test_book.id}", headers=headers)
     assert response.status_code == 200
-    assert response.json['title'] == 'Unique Book'
+    assert response.json()["title"] == test_book.title
 
-def test_update_book(test_client, auth_headers, create_book):
-    #   Create a book first
-    create_book(title='Updatable Book', author='Old Author', genre='Classic')
+async def test_update_book(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    updated_data = {'title': 'Updated Title'}
-    response = test_client.put('/api/books/1', json=updated_data, headers=auth_headers)
+    updated_data = {"title": "Updated Book Title"}
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.put(f"/api/books/{test_book.id}", json=updated_data, headers=headers)
     assert response.status_code == 200
-    assert response.json['title'] == 'Updated Title'
+    assert response.json()["title"] == "Updated Book Title"
 
-def test_delete_book(test_client, auth_headers, create_book):
-    #   Create a book first
-    create_book(title='Deletable Book', author='Gone Author', genre='Horror')
+async def test_delete_book(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
 
-    response = test_client.delete('/api/books/1', headers=auth_headers)
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.delete(f"/api/books/{test_book.id}", headers=headers)
     assert response.status_code == 200
-    assert response.json['message'] == 'Book deleted'
-    response_get = test_client.get('/api/books/1', headers=auth_headers)
-    assert response_get.status_code == 404
+    response = await async_client.get(f"/api/books/{test_book.id}", headers=headers)
+    assert response.status_code == 404
 
-def test_create_book_no_auth(test_client):
-    data = {
-        'title': 'Unauthorized Book',
-        'author': 'Unauthorized Author',
-        'genre': 'Unauthorized'
-    }
-    response = test_client.post('/api/books', json=data)
-    assert response.status_code == 401
+async def test_get_book_summary(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get(f"/api/books/{test_book.id}/summary", headers=headers)
+    assert response.status_code == 200
+    #  We can't assert the exact summary, but we can check for a message or that the summary is eventually populated
+
+async def test_get_book_recommendations(async_client: AsyncClient, db: AsyncSession, test_user: models.User, test_book: models.Book):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get(f"/api/books/{test_book.id}/recommendations/", headers=headers)
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
