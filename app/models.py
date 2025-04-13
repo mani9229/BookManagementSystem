@@ -1,40 +1,52 @@
-from app import db
-from werkzeug.security import generate_password_hash, check_password_hash
+# app/models.py
+from sqlalchemy import Column, Integer, String, ForeignKey, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.ext.declarative import declarative_base
+from app.database import Base
+import logging
 
-class Book(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    author = db.Column(db.String(255), nullable=False)
-    genre = db.Column(db.String(255), nullable=False)
-    year_published = db.Column(db.Integer)
-    summary = db.Column(db.Text)
+logger = logging.getLogger(__name__)
 
-    def __repr__(self):
-        return f'<Book {self.title}>'
+class Book(Base):
+    __tablename__ = "books"
 
-class Review(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    review_text = db.Column(db.Text)
-    rating = db.Column(db.Integer, nullable=False)
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True, nullable=False)
+    author = Column(String, nullable=False)
+    genre = Column(String, nullable=False)
+    year_published = Column(Integer, nullable=False)
+    summary = Column(Text, nullable=True)
+    content = Column(Text, nullable=False)
+    review_summary = Column(Text, nullable=True) # Adding review summary
 
-    book = db.relationship('Book', backref='reviews')
-    user = db.relationship('User', backref='reviews')
-
-    def __repr__(self):
-        return f'<Review {self.review_text[:20]}...>'
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f"<Book(title='{self.title}', author='{self.author}')>"
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Foreign Key to users table
+    review_text = Column(Text, nullable=False)
+    rating = Column(Integer, nullable=False)
+
+    book = relationship("Book", back_populates="reviews")
+    user = relationship("User", back_populates="reviews") # Relationship with User
+
+    def __repr__(self):
+        return f"<Review(review_text='{self.review_text}', rating='{self.rating}')>"
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+
+    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<User(username='{self.username}')>"
