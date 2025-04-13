@@ -3,10 +3,10 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 
 class BookBase(BaseModel):
-    title: str = Field(..., max_length=255)
-    author: str = Field(..., max_length=255)
-    genre: str = Field(..., max_length=100)
-    year_published: int = Field(..., ge=1000, le=2025)
+    title: str = Field(None max_length=255)
+    author: str = Field(None, max_length=255)
+    genre: str = Field(None, max_length=100)
+    year_published: int = Field(None, ge=1000, le=2025)
     content: str
 
 class BookCreate(BookBase):
@@ -29,7 +29,7 @@ class BookResponse(BookBase):
 
 class ReviewBase(BaseModel):
     review_text: str
-    rating: int = Field(..., ge=1, le=5)
+    rating: int = Field(None, ge=1, le=5)
 
 class ReviewCreate(ReviewBase):
     user_id: int # Ensure user_id is part of creation
@@ -47,10 +47,10 @@ class ReviewResponse(ReviewBase):
         orm_mode = True
 
 class UserBase(BaseModel):
-    username: str = Field(..., max_length=50)
+    username: str = Field(None, max_length=50)
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
+    password: str = Field(None, min_length=8)
 
 class UserResponse(UserBase):
     id: int
