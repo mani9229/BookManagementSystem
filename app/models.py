@@ -1,52 +1,73 @@
-# app/models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, Text
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
-from app.database import Base
-import logging
+# app/schemas.py
+from typing import Optional, List
+from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+class BookBase(BaseModel):
+    title: str = Field(..., max_length=255)
+    author: str = Field(..., max_length=255)
+    genre: str = Field(..., max_length=100)
+    year_published: int = Field(..., ge=1000, le=2025)
+    content: str
 
-class Book(Base):
-    __tablename__ = "books"
+class BookCreate(BookBase):
+    pass
 
-    id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, index=True, nullable=False)
-    author = Column(String, nullable=False)
-    genre = Column(String, nullable=False)
-    year_published = Column(Integer, nullable=False)
-    summary = Column(Text, nullable=True)
-    content = Column(Text, nullable=False)
-    review_summary = Column(Text, nullable=True) # Adding review summary
+class BookUpdate(BookBase):
+    title: Optional[str] = Field(None, max_length=255)
+    author: Optional[str] = Field(None, max_length=255)
+    genre: Optional[str] = Field(None, max_length=100)
+    year_published: Optional[int] = Field(None, ge=1000, le=2025)
+    content: Optional[str] = None
 
-    reviews = relationship("Review", back_populates="book", cascade="all, delete-orphan")
+class BookResponse(BookBase):
+    id: int
+    summary: Optional[str] = None
+    review_summary: Optional[str] = None
 
-    def __repr__(self):
-        return f"<Book(title='{self.title}', author='{self.author}')>"
+    class Config:
+        orm_mode = True
 
-class Review(Base):
-    __tablename__ = "reviews"
+class ReviewBase(BaseModel):
+    review_text: str
+    rating: int = Field(..., ge=1, le=5)
 
-    id = Column(Integer, primary_key=True, index=True)
-    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False) # Foreign Key to users table
-    review_text = Column(Text, nullable=False)
-    rating = Column(Integer, nullable=False)
+class ReviewCreate(ReviewBase):
+    user_id: int # Ensure user_id is part of creation
 
-    book = relationship("Book", back_populates="reviews")
-    user = relationship("User", back_populates="reviews") # Relationship with User
+class ReviewUpdate(ReviewBase):
+    review_text: Optional[str] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
 
-    def __repr__(self):
-        return f"<Review(review_text='{self.review_text}', rating='{self.rating}')>"
+class ReviewResponse(ReviewBase):
+    id: int
+    book_id: int
+    user_id: int
 
-class User(Base):
-    __tablename__ = "users"
+    class Config:
+        orm_mode = True
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+class UserBase(BaseModel):
+    username: str = Field(..., max_length=50)
 
-    reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=8)
 
-    def __repr__(self):
-        return f"<User(username='{self.username}')>"
+class UserResponse(UserBase):
+    id: int
+    username: str
+
+    class Config:
+        orm_mode = True
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: str
+    user_id: int
+
+class RecommendationResponse(BaseModel):
+    book_id: int
+    title: str
+    similarity_score: float
