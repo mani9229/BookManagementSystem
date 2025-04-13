@@ -1,84 +1,53 @@
-import os
-from dotenv import load_dotenv
-from langchain.llms import Ollama
-from langchain.chains.summarize import load_summarize_chain
-from langchain.prompts import PromptTemplate
-from typing import List, Optional
+# app/llm_utils.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from llama_cpp import Llama
+from app.config import settings
+from app import models
+import logging
 
-load_dotenv()
+logger = logging.getLogger(__name__)
 
-# --- Configuration ---
-LLM_PROVIDER = "OLLAMA"  
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "Llama-2-7b-chat-GGUF")  # model
+LLM = Llama(model_path=settings.LLAMA_MODEL_PATH)
 
-# --- Ollama Setup ---
-def get_ollama_model():
-    """Initializes and returns the Ollama model."""
-    return Ollama(model=OLLAMA_MODEL)  # model
-
-# --- LLM Utility Functions ---
-
-def generate_book_summary(book_content: str) -> str:
-    """Generates a summary for a book using Ollama."""
-
+async def generate_book_summary(book_id: int, db: AsyncSession):
     try:
-        if LLM_PROVIDER == "OLLAMA":
-            llm = get_ollama_model()
-            prompt_template = """Write a concise summary of the following text:
-            "{text}"
-            CONCISE SUMMARY:"""
-            prompt = PromptTemplate(template=prompt_template, input_variables=["text"])
-            chain = load_summarize_chain(llm, chain_type="stuff", prompt=prompt)
-            summary = chain.run(book_content)
-            return summary.strip()
+        book = await db.execute(select(models.Book).filter(models.Book.id == book_id))
+        book = book.scalars().first()
+        if not book:
+            logger.warning(f"Book with ID {book_id} not found.")
+            return
 
-        else:
-            return "Error: LLM_PROVIDER not configured correctly (OLLAMA expected)."
+        prompt = f"Summarize the following book content: {book.content}"
+        output = LLM(prompt, max_tokens=256, echo=False)
+        summary = output["choices"][0]["text"]
 
+        book.summary = summary
+        await db.commit()
     except Exception as e:
-        print(f"Error generating book summary: {e}")
-        return "Failed to generate book summary."
+        logger.error(f"Error generating summary for book {book_id}: {e}")
+        await db.rollback()
 
-
-def generate_review_summary(reviews: List[str]) -> Optional[str]:
-    """Generates a summary of book reviews using Ollama."""
-
+async def generate_review_summary(book_id: int, db: AsyncSession):
     try:
-        if LLM_PROVIDER == "OLLAMA":
-            if not reviews:
-                return None
+        reviews = await db.execute(select(models.Review).filter(models.Review.book_id == book_id))
+        reviews = reviews.scalars().all()
+        if not reviews:
+            logger.info(f"No reviews available for book {book_id}.")
+            return
 
-            llm = get_ollama_model()
-            prompt_template = """Summarize the following book reviews:
-            "{text}"
-            SUMMARY:"""
-            prompt = PromptTemplate(template=prompt_template, input_variables=["text"])
-            chain = load_summarize_chain(llm, chain_type="stuff", prompt=prompt)
-            summary = chain.run("\n".join(reviews))
-            return summary.strip()
+        review_texts = [review.review_text for review in reviews]
+        prompt = f"Summarize the following reviews: {review_texts}"
+        output = LLM(prompt, max_tokens=128, echo=False)
+        summary = output["choices"][0]["text"]
+
+        book = await db.execute(select(models.Book).filter(models.Book.id == book_id))
+        book = book.scalars().first()
+        if book:
+            book.review_summary = summary
+            await db.commit()
         else:
-            return "Error: LLM_PROVIDER not configured correctly (OLLAMA expected)."
-
+            logger.warning(f"Book with ID {book_id} not found.")
     except Exception as e:
-        print(f"Error generating review summary: {e}")
-        return None
-
-
-def generate_recommendations(user_preferences: str, books_data: List[dict]) -> str:
-    """Generates book recommendations based on user preferences."""
-
-    try:
-        if LLM_PROVIDER == "OLLAMA":
-            llm = get_ollama_model()
-            prompt_template = """Given these user preferences: {preferences}, recommend some of these books: {books}
-            RECOMMENDATIONS:"""
-            prompt = PromptTemplate(template=prompt_template, input_variables=["preferences", "books"])
-            chain = load_summarize_chain(llm, chain_type="stuff", prompt=prompt)
-            recommendations = chain.run(preferences=user_preferences, books=str(books_data))
-            return recommendations.strip()
-        else:
-            return "Error: LLM_PROVIDER not configured correctly (OLLAMA expected)."
-
-    except Exception as e:
-        print(f"Error generating recommendations: {e}")
-        return "Failed to generate recommendations."
+        logger.error(f"Error generating review summary for book {book_id}: {e}")
+        await db.rollback()
