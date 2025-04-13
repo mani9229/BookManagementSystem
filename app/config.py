@@ -1,36 +1,20 @@
+# app/config.py
 import os
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
 load_dotenv()
 
-class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'JK_GEN_bookmanagement'
-    #  Get from environment
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+class Settings(BaseModel):
+    DATABASE_URL: str = os.getenv("postgresql://neondb_owner:npg_d9JMeauYP4Oj@ep-damp-unit-a59836nl-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require")
+    LLAMA_MODEL_PATH: str = os.getenv("LLAMA_MODEL_PATH")  ##LLAMA MODEL LOCATION
+    SECRET_KEY: str = os.getenv("SECRET_KEY")   ##USe JK_GEN_bookmanagement' for this currenlty
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-class DevelopmentConfig(Config):
-    DEBUG = True
-    SQLALCHEMY_DATABASE_uri = os.environ.get('DATABASE_URL') or \
-        'postgresql://neondb_owner:npg_d9JMeauYP4Oj@ep-damp-unit-a59836nl-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require'  # using default for all
+settings = Settings()
 
-class TestingConfig(Config):
-    TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://neondb_owner:npg_d9JMeauYP4Oj@ep-damp-unit-a59836nl-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require' #  using default for all
-    WTF_CSRF_ENABLED = False  # Disable CSRF for testing
-
-class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'postgresql://neondb_owner:npg_d9JMeauYP4Oj@ep-damp-unit-a59836nl-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require' #  using default for all
-    
-
-app_config = {
-    'development': DevelopmentConfig,
-    'testing': TestingConfig,
-    'production': ProductionConfig,
-    'default': DevelopmentConfig
-}
-
-def get_config(config_name):
-    """Returns the configuration object based on the environment."""
-    return app_config.get(config_name, app_config['default'])
+# Example .env file:
+# DATABASE_URL=postgresql+asyncpg://user:password@host/dbname
+# LLAMA_MODEL_PATH=/path/to/your/llama/model
+# SECRET_KEY=your_secret_key
