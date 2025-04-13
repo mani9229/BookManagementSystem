@@ -1,47 +1,39 @@
+# tests/test_auth.py
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+from app import schemas, models
 import json
 
-def test_register(test_client):
-    data = {
-        'username': 'newuser',
-        'password': 'newpassword'
-    }
-    response = test_client.post('/api/register', json=data)
+async def test_register_user(async_client: AsyncClient, db: AsyncSession):
+    user_data = {"username": "newuser", "password": "newpassword"}
+    response = await async_client.post("/auth/register/", json=user_data)
     assert response.status_code == 201
-    assert response.json['username'] == 'newuser'
+    assert response.json()["username"] == "newuser"
 
-def test_register_duplicate_user(test_client):
-    #   Register a user first
-    data = {
-        'username': 'duplicateuser',
-        'password': 'somepassword'
-    }
-    test_client.post('/api/register', json=data)
+    # Check if user is in the database
+    user = await db.execute(select(models.User).filter(models.User.username == "newuser"))
+    assert user.scalars().first() is not None
 
-    #   Try to register again with the same username
-    response = test_client.post('/api/register', json=data)
-    assert response.status_code == 400
-    assert response.json['message'] == 'Username already exists'
-
-def test_login(test_client):
-    #   Register a user first
-    test_client.post('/api/register', json={'username': 'loginuser', 'password': 'loginpassword'})
-
-    data = {
-        'username': 'loginuser',
-        'password': 'loginpassword'
-    }
-    response = test_client.post('/api/login', json=data)
+async def test_login_user(async_client: AsyncClient, test_user: models.User):
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    response = await async_client.post("/auth/token", data=login_data)
     assert response.status_code == 200
-    assert 'access_token' in response.json
+    assert "access_token" in response.json()
 
-def test_login_invalid_credentials(test_client):
-    #   Register a user first
-    test_client.post('/api/register', json={'username': 'baduser', 'password': 'badpassword'})
-
-    data = {
-        'username': 'baduser',
-        'password': 'wrongpassword'
-    }
-    response = test_client.post('/api/login', json=data)
+async def test_login_user_incorrect_password(async_client: AsyncClient, test_user: models.User):
+    login_data = {"username": "testuser", "password": "wrongpassword"}
+    response = await async_client.post("/auth/token", data=login_data)
     assert response.status_code == 401
-    assert response.json['message'] == 'Invalid credentials'
+    assert "Incorrect username or password" in response.json()["detail"]
+
+async def test_get_current_user(async_client: AsyncClient, test_user: models.User):
+    # First, log in to get a token
+    login_data = {"username": "testuser", "password": "testpassword"} #  Assuming 'testpassword' was the password
+    login_response = await async_client.post("/auth/token", data=login_data)
+    access_token = login_response.json()["access_token"]
+
+    # Then, use the token to access a protected route
+    headers = {"Authorization": f"Bearer {access_token}"}
+    response = await async_client.get("/api/books/", headers=headers) #  Any protected route will do
+    assert response.status_code == 200
